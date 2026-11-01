@@ -2,6 +2,7 @@ package com.inspection;
 
 import com.inspection.demo.FintechProjectFactory;
 import com.inspection.element.Directory;
+import com.inspection.health.InfrastructureHealthScore;
 import com.inspection.visitor.ComplianceVisitor;
 import com.inspection.visitor.DeploymentReadinessVisitor;
 import com.inspection.visitor.DocumentationVisitor;
@@ -51,5 +52,10 @@ public class Main {
         System.out.println(technicalDebt.getReport());
         System.out.println(deployment.getReport());
         System.out.println(documentation.getReport());
+
+        // Final feature: simple weighted calculation on top of the visitor results.
+        InfrastructureHealthScore healthScore =
+                new InfrastructureHealthScore(security, qualityGate, compliance, deployment);
+        System.out.println(healthScore.getReport());
     }
 }
