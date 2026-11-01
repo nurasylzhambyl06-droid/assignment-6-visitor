@@ -20,7 +20,7 @@ import java.util.List;
  *
  * SCORING RULES
  *   score = 100 - (sum of penalties of all findings), but never below 0.
- *   Penalties: LOW = 3, MEDIUM = 8, HIGH = 15, CRITICAL = 25.
+ *   Penalties: LOW = 2, MEDIUM = 4, HIGH = 8, CRITICAL = 15.
  *
  * SEVERITY RULES
  *   CRITICAL: hardcoded credentials in source, exposed credentials in config or database,

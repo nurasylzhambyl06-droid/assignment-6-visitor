@@ -5,10 +5,10 @@ package com.inspection.report;
  * subtracted from the security score of 100.
  */
 public enum Severity {
-    LOW(3),
-    MEDIUM(8),
-    HIGH(15),
-    CRITICAL(25);
+    LOW(2),
+    MEDIUM(4),
+    HIGH(8),
+    CRITICAL(15);
 
     private final int penalty;
 

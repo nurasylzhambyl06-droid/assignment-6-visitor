@@ -192,9 +192,9 @@ public class DeploymentReadinessVisitor implements ProjectVisitor {
             sb.append(result).append("\n");
         }
         sb.append("-".repeat(66)).append("\n");
-        sb.append("Checks passed   : ").append(getPassedCount()).append(" / ").append(CHECK_COUNT).append("\n");
-        sb.append("Readiness score: ").append(getReadinessScore()).append(" / 100\n");
-        sb.append("Decision       : ").append(getDecision()).append("\n");
+        sb.append("Checks passed    : ").append(getPassedCount()).append(" / ").append(CHECK_COUNT).append("\n");
+        sb.append("Readiness score  : ").append(getReadinessScore()).append(" / 100\n");
+        sb.append("Decision         : ").append(getDecision()).append("\n");
         return sb.toString();
     }
 }
