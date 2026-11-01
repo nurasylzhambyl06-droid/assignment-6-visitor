@@ -1,0 +1,209 @@
+@startuml class-diagram
+title Smart Infrastructure Inspection Engine - Class Diagram (Visitor Pattern)
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+
+' ---------------------------------------------------------------
+' ELEMENT side
+' ---------------------------------------------------------------
+interface ProjectElement <<Element>> {
+  + accept(visitor : ProjectVisitor) : void
+}
+
+class SourceCodeFile {
+  - fileName : String
+  - linesOfCode : int
+  - complexity : int
+  - hardcodedCredentials : boolean
+  - documented : boolean
+  + accept(visitor : ProjectVisitor) : void
+}
+
+class TestFile {
+  - fileName : String
+  - numberOfTests : int
+  + accept(visitor : ProjectVisitor) : void
+}
+
+class ConfigurationFile {
+  - fileName : String
+  - exposedCredentials : boolean
+  - insecureConfiguration : boolean
+  - documented : boolean
+  + accept(visitor : ProjectVisitor) : void
+}
+
+class DependencyFile {
+  - dependencyName : String
+  - version : String
+  - vulnerable : boolean
+  - prohibited : boolean
+  + accept(visitor : ProjectVisitor) : void
+}
+
+class Directory {
+  - name : String
+  + add(element : ProjectElement) : void
+  + getElements() : List<ProjectElement>
+  + accept(visitor : ProjectVisitor) : void
+}
+
+class DatabaseElement {
+  - databaseName : String
+  - encryptedConnection : boolean
+  - backupEnabled : boolean
+  - exposedCredentials : boolean
+  - documented : boolean
+  + accept(visitor : ProjectVisitor) : void
+}
+
+class APIEndpointElement {
+  - endpointPath : String
+  - httpMethod : String
+  - authenticationRequired : boolean
+  - rateLimitingEnabled : boolean
+  - documented : boolean
+  + accept(visitor : ProjectVisitor) : void
+}
+
+class DeploymentConfigElement {
+  - environment : String
+  - debugMode : boolean
+  - httpsEnabled : boolean
+  - autoDeploymentEnabled : boolean
+  - documented : boolean
+  + accept(visitor : ProjectVisitor) : void
+}
+
+ProjectElement <|.. SourceCodeFile
+ProjectElement <|.. TestFile
+ProjectElement <|.. ConfigurationFile
+ProjectElement <|.. DependencyFile
+ProjectElement <|.. Directory
+ProjectElement <|.. DatabaseElement
+ProjectElement <|.. APIEndpointElement
+ProjectElement <|.. DeploymentConfigElement
+
+' Composition: a Directory contains any ProjectElement, including other Directories
+Directory o-- "0..*" ProjectElement : elements
+
+' ---------------------------------------------------------------
+' VISITOR side
+' ---------------------------------------------------------------
+interface ProjectVisitor <<Visitor>> {
+  + visit(SourceCodeFile) : void
+  + visit(TestFile) : void
+  + visit(ConfigurationFile) : void
+  + visit(DependencyFile) : void
+  + visit(Directory) : void
+  + visit(DatabaseElement) : void
+  + visit(APIEndpointElement) : void
+  + visit(DeploymentConfigElement) : void
+}
+
+class SecurityAuditVisitor {
+  + getFindings() : List<SecurityFinding>
+  + getCriticalCount() : int
+  + getSecurityScore() : int
+  + getReport() : String
+}
+
+class ProjectStatisticsVisitor {
+  + getTotalFiles() : int
+  + getTotalLinesOfCode() : int
+  + getAverageComplexity() : double
+  + getTestSourceRatio() : double
+  + getReport() : String
+}
+
+class QualityGateVisitor {
+  + getResults() : List<CheckResult>
+  + isPassed() : boolean
+  + getQualityScore() : int
+  + getReport() : String
+}
+
+class ComplianceVisitor {
+  + getResults() : List<CheckResult>
+  + getViolationCount() : int
+  + getComplianceScore() : int
+  + getReport() : String
+}
+
+class TechnicalDebtVisitor {
+  + getDebtPoints() : int
+  + getFindings() : List<String>
+  + getStatus() : DebtStatus
+  + getReport() : String
+}
+
+class DeploymentReadinessVisitor {
+  + getResults() : List<CheckResult>
+  + getReadinessScore() : int
+  + getDecision() : DeploymentDecision
+  + getReport() : String
+}
+
+class DocumentationVisitor {
+  + getDocumentedComponents() : List<String>
+  + getMissingComponents() : List<String>
+  + getDocumentationScore() : int
+  + getReport() : String
+}
+
+ProjectVisitor <|.. SecurityAuditVisitor
+ProjectVisitor <|.. ProjectStatisticsVisitor
+ProjectVisitor <|.. QualityGateVisitor
+ProjectVisitor <|.. ComplianceVisitor
+ProjectVisitor <|.. TechnicalDebtVisitor
+ProjectVisitor <|.. DeploymentReadinessVisitor
+ProjectVisitor <|.. DocumentationVisitor
+
+' ---------------------------------------------------------------
+' accept() and visit() relationships
+' ---------------------------------------------------------------
+ProjectElement ..> ProjectVisitor : accept(visitor) calls\nvisitor.visit(this)
+ProjectVisitor ..> SourceCodeFile : visit
+ProjectVisitor ..> TestFile : visit
+ProjectVisitor ..> ConfigurationFile : visit
+ProjectVisitor ..> DependencyFile : visit
+ProjectVisitor ..> Directory : visit
+ProjectVisitor ..> DatabaseElement : visit
+ProjectVisitor ..> APIEndpointElement : visit
+ProjectVisitor ..> DeploymentConfigElement : visit
+
+' QualityGateVisitor receives the numbers of two other visitors (no duplicated calculation)
+QualityGateVisitor --> ProjectStatisticsVisitor : reads metrics
+QualityGateVisitor --> SecurityAuditVisitor : reads critical count
+
+' ---------------------------------------------------------------
+' Reporting / calculation feature (not a visitor)
+' ---------------------------------------------------------------
+class InfrastructureHealthScore <<calculation>> {
+  + getOverallScore() : int
+  + getStatus() : HealthStatus
+  + getLossReasons() : List<String>
+  + getReport() : String
+}
+
+InfrastructureHealthScore --> SecurityAuditVisitor : 35%
+InfrastructureHealthScore --> QualityGateVisitor : 25%
+InfrastructureHealthScore --> ComplianceVisitor : 20%
+InfrastructureHealthScore --> DeploymentReadinessVisitor : 20%
+
+class Main {
+  + main(args : String[]) : void
+}
+
+class FintechProjectFactory {
+  + createProject() : Directory
+}
+
+Main ..> FintechProjectFactory : builds demo tree
+Main ..> ProjectElement : root.accept(visitor)
+Main ..> InfrastructureHealthScore : prints final score
+FintechProjectFactory ..> Directory : creates
+
+@enduml

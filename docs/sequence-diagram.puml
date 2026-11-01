@@ -1,0 +1,69 @@
+@startuml sequence-diagram
+title Double Dispatch and Recursive Directory Processing (SecurityAuditVisitor)
+
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+participant "Main" as Main
+participant "audit : SecurityAuditVisitor" as Audit
+participant "root : Directory\n(smart-fintech-platform)" as Root
+participant "infrastructure : Directory" as Infra
+participant "db : DatabaseElement\n(legacy-reporting-db)" as Db
+participant "api : Directory" as Api
+
+Main -> Audit : new SecurityAuditVisitor()
+Main -> Root : accept(audit)
+activate Root
+
+== Step 1 of double dispatch: the runtime type of the ELEMENT is Directory ==
+Root -> Audit : visit(this)
+note right of Audit
+  Step 2: the compiler already chose
+  visit(Directory) because "this" has
+  the static type Directory.
+  The directory itself has nothing to check.
+end note
+
+== Recursion: Directory passes the same visitor to every child ==
+loop for each child in root.elements
+  Root -> Infra : accept(audit)
+  activate Infra
+  Infra -> Audit : visit(this)  [visit(Directory)]
+
+  loop for each child in infrastructure.elements
+    Infra -> Db : accept(audit)
+    activate Db
+    Db -> Audit : visit(this)  [visit(DatabaseElement)]
+    activate Audit
+    note right of Audit
+      Infrastructure element inspected:
+      encryptedConnection == false
+      -> addFinding(HIGH, "legacy-reporting-db",
+         "Database connection is not encrypted")
+    end note
+    Audit --> Db
+    deactivate Audit
+    Db --> Infra
+    deactivate Db
+  end
+
+  Infra --> Root
+  deactivate Infra
+
+  Root -> Api : accept(audit)
+  activate Api
+  note over Api, Audit
+    Same pattern for every APIEndpointElement inside "api":
+    accept(audit) -> audit.visit(this)  [visit(APIEndpointElement)]
+  end note
+  Api --> Root
+  deactivate Api
+end
+
+Root --> Main
+deactivate Root
+
+Main -> Audit : getReport()
+Audit --> Main : findings, critical count, security score
+
+@enduml
