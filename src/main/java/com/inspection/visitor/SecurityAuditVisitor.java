@@ -1,7 +1,10 @@
 package com.inspection.visitor;
 
+import com.inspection.element.APIEndpointElement;
 import com.inspection.element.ConfigurationFile;
+import com.inspection.element.DatabaseElement;
 import com.inspection.element.DependencyFile;
+import com.inspection.element.DeploymentConfigElement;
 import com.inspection.element.Directory;
 import com.inspection.element.SourceCodeFile;
 import com.inspection.element.TestFile;
@@ -20,9 +23,14 @@ import java.util.List;
  *   Penalties: LOW = 3, MEDIUM = 8, HIGH = 15, CRITICAL = 25.
  *
  * SEVERITY RULES
- *   CRITICAL: hardcoded credentials in source, exposed credentials in config
- *   HIGH:     vulnerable dependency, high-risk source file (complexity above 20)
- *   MEDIUM:   insecure configuration
+ *   CRITICAL: hardcoded credentials in source, exposed credentials in config or database,
+ *             production deployment without HTTPS
+ *   HIGH:     vulnerable dependency, high-risk source file (complexity above 20),
+ *             unencrypted database connection, API endpoint without authentication,
+ *             debug mode enabled in production
+ *   MEDIUM:   insecure configuration, API endpoint without rate limiting,
+ *             automatic deployment to production
+ * Deployment settings are only judged for the production environment.
  */
 public class SecurityAuditVisitor implements ProjectVisitor {
 
@@ -69,6 +77,45 @@ public class SecurityAuditVisitor implements ProjectVisitor {
     @Override
     public void visit(Directory directory) {
         // Directory itself has nothing to check; its children are visited by Directory.accept().
+    }
+
+    @Override
+    public void visit(DatabaseElement databaseElement) {
+        String name = databaseElement.getDatabaseName();
+        if (databaseElement.hasExposedCredentials()) {
+            addFinding(Severity.CRITICAL, name, "Database credentials are exposed");
+        }
+        if (!databaseElement.isEncryptedConnection()) {
+            addFinding(Severity.HIGH, name, "Database connection is not encrypted");
+        }
+    }
+
+    @Override
+    public void visit(APIEndpointElement apiEndpointElement) {
+        String label = apiEndpointElement.getLabel();
+        if (!apiEndpointElement.isAuthenticationRequired()) {
+            addFinding(Severity.HIGH, label, "API endpoint does not require authentication");
+        }
+        if (!apiEndpointElement.isRateLimitingEnabled()) {
+            addFinding(Severity.MEDIUM, label, "API endpoint has no rate limiting");
+        }
+    }
+
+    @Override
+    public void visit(DeploymentConfigElement deploymentConfigElement) {
+        if (!deploymentConfigElement.isProduction()) {
+            return;
+        }
+        String location = "deployment (production)";
+        if (!deploymentConfigElement.isHttpsEnabled()) {
+            addFinding(Severity.CRITICAL, location, "HTTPS is disabled in production");
+        }
+        if (deploymentConfigElement.isDebugMode()) {
+            addFinding(Severity.HIGH, location, "Debug mode is enabled in production");
+        }
+        if (deploymentConfigElement.isAutoDeploymentEnabled()) {
+            addFinding(Severity.MEDIUM, location, "Automatic deployment to production is enabled");
+        }
     }
 
     private void addFinding(Severity severity, String location, String message) {

@@ -1,7 +1,10 @@
 package com.inspection.visitor;
 
+import com.inspection.element.APIEndpointElement;
 import com.inspection.element.ConfigurationFile;
+import com.inspection.element.DatabaseElement;
 import com.inspection.element.DependencyFile;
+import com.inspection.element.DeploymentConfigElement;
 import com.inspection.element.Directory;
 import com.inspection.element.SourceCodeFile;
 import com.inspection.element.TestFile;
@@ -23,4 +26,10 @@ public interface ProjectVisitor {
     void visit(DependencyFile dependencyFile);
 
     void visit(Directory directory);
+
+    void visit(DatabaseElement databaseElement);
+
+    void visit(APIEndpointElement apiEndpointElement);
+
+    void visit(DeploymentConfigElement deploymentConfigElement);
 }

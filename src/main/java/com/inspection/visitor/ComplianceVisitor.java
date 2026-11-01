@@ -1,7 +1,10 @@
 package com.inspection.visitor;
 
+import com.inspection.element.APIEndpointElement;
 import com.inspection.element.ConfigurationFile;
+import com.inspection.element.DatabaseElement;
 import com.inspection.element.DependencyFile;
+import com.inspection.element.DeploymentConfigElement;
 import com.inspection.element.Directory;
 import com.inspection.element.SourceCodeFile;
 import com.inspection.element.TestFile;
@@ -25,9 +28,14 @@ public class ComplianceVisitor implements ProjectVisitor {
     public static final String RULE_VERSIONS = "Every dependency has a version";
     public static final String RULE_TESTS = "Production modules have tests";
     public static final String RULE_PROHIBITED = "No prohibited dependencies";
+    public static final String RULE_DB_ENCRYPTION = "Databases use encrypted connections";
+    public static final String RULE_HTTPS = "Production deployment uses HTTPS";
+    public static final String RULE_DEBUG = "Debug mode is off in production";
+    public static final String RULE_API_AUTH = "API endpoints require authentication";
 
     private static final String[] RULES = {
-            RULE_CREDENTIALS, RULE_VERSIONS, RULE_TESTS, RULE_PROHIBITED
+            RULE_CREDENTIALS, RULE_VERSIONS, RULE_TESTS, RULE_PROHIBITED,
+            RULE_DB_ENCRYPTION, RULE_HTTPS, RULE_DEBUG, RULE_API_AUTH
     };
 
     /** One broken rule: which rule and what exactly is wrong. */
@@ -88,6 +96,37 @@ public class ComplianceVisitor implements ProjectVisitor {
     @Override
     public void visit(Directory directory) {
         // Nothing to check in the directory itself.
+    }
+
+    @Override
+    public void visit(DatabaseElement databaseElement) {
+        String name = databaseElement.getDatabaseName();
+        if (databaseElement.hasExposedCredentials()) {
+            addViolation(RULE_CREDENTIALS, name + ": exposed database credentials");
+        }
+        if (!databaseElement.isEncryptedConnection()) {
+            addViolation(RULE_DB_ENCRYPTION, name + ": connection is not encrypted");
+        }
+    }
+
+    @Override
+    public void visit(APIEndpointElement apiEndpointElement) {
+        if (!apiEndpointElement.isAuthenticationRequired()) {
+            addViolation(RULE_API_AUTH, apiEndpointElement.getLabel() + ": no authentication");
+        }
+    }
+
+    @Override
+    public void visit(DeploymentConfigElement deploymentConfigElement) {
+        if (!deploymentConfigElement.isProduction()) {
+            return;
+        }
+        if (!deploymentConfigElement.isHttpsEnabled()) {
+            addViolation(RULE_HTTPS, "production: HTTPS is disabled");
+        }
+        if (deploymentConfigElement.isDebugMode()) {
+            addViolation(RULE_DEBUG, "production: debug mode is enabled");
+        }
     }
 
     private void addViolation(String rule, String message) {

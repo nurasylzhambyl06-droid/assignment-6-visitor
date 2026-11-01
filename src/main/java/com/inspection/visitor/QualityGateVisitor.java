@@ -1,7 +1,10 @@
 package com.inspection.visitor;
 
+import com.inspection.element.APIEndpointElement;
 import com.inspection.element.ConfigurationFile;
+import com.inspection.element.DatabaseElement;
 import com.inspection.element.DependencyFile;
+import com.inspection.element.DeploymentConfigElement;
 import com.inspection.element.Directory;
 import com.inspection.element.SourceCodeFile;
 import com.inspection.element.TestFile;
@@ -63,6 +66,21 @@ public class QualityGateVisitor implements ProjectVisitor {
 
     @Override
     public void visit(Directory directory) {
+        // Metrics come from the constructor visitors.
+    }
+
+    @Override
+    public void visit(DatabaseElement databaseElement) {
+        // Metrics come from the constructor visitors.
+    }
+
+    @Override
+    public void visit(APIEndpointElement apiEndpointElement) {
+        // Metrics come from the constructor visitors.
+    }
+
+    @Override
+    public void visit(DeploymentConfigElement deploymentConfigElement) {
         // Metrics come from the constructor visitors.
     }
 
